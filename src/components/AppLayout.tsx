@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { Map, CheckSquare, Camera, BookOpen, Menu, X, Triangle } from "lucide-react";
+import { Map, CheckSquare, Camera, BookOpen, Menu, X, Triangle, History, LogOut, User } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 
 const navItems = [
   { to: "/", icon: Map, label: "Dashboard" },
   { to: "/checklist", icon: CheckSquare, label: "Checklist" },
   { to: "/analisador", icon: Camera, label: "Analisador IA" },
+  { to: "/historico", icon: History, label: "Histórico" },
   { to: "/conhecimento", icon: BookOpen, label: "Base de Dados" },
 ];
 
@@ -64,6 +66,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 }
 
 function SidebarContent({ currentPath, onClose }: { currentPath: string; onClose?: () => void }) {
+  const { user, signOut } = useAuth();
+
   return (
     <div className="flex flex-col h-full p-4">
       {/* Logo */}
@@ -113,16 +117,31 @@ function SidebarContent({ currentPath, onClose }: { currentPath: string; onClose
         })}
       </nav>
 
-      {/* Footer */}
-      <div className="border-t border-sidebar-border pt-4 mt-4">
-        <div className="px-2 py-2 rounded-lg bg-sidebar-accent">
-          <p className="text-xs text-muted-foreground font-mono-custom">SISTEMA</p>
-          <p className="text-xs text-sidebar-foreground mt-0.5">Topografia Profissional</p>
-          <div className="flex items-center gap-1.5 mt-2">
-            <div className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
-            <span className="text-xs text-success">IA Operacional</span>
+      {/* User + Logout */}
+      <div className="border-t border-sidebar-border pt-4 mt-4 space-y-2">
+        {user && (
+          <div className="px-2 py-2 rounded-lg bg-sidebar-accent">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center">
+                <User className="w-3.5 h-3.5 text-primary" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs text-sidebar-foreground font-medium truncate">{user.email}</p>
+                <div className="flex items-center gap-1 mt-0.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
+                  <span className="text-xs text-success">Conectado</span>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
+        )}
+        <button
+          onClick={signOut}
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors text-sm"
+        >
+          <LogOut className="w-4 h-4" />
+          Sair
+        </button>
       </div>
     </div>
   );

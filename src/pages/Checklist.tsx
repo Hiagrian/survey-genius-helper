@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { CheckSquare, Square, Plus, Trash2, RefreshCw, ChevronDown, ChevronRight, Check } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { CheckSquare, Square, Plus, Trash2, RefreshCw, ChevronDown, ChevronRight, Check, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -11,7 +11,6 @@ interface ChecklistItem {
 }
 
 const defaultChecklist: Omit<ChecklistItem, "id">[] = [
-  // Pré-campo
   { category: "PRÉ-CAMPO", text: "Verificar calibração da estação total", checked: false },
   { category: "PRÉ-CAMPO", text: "Verificar nível da régua de mira", checked: false },
   { category: "PRÉ-CAMPO", text: "Carregar baterias dos equipamentos", checked: false },
@@ -19,7 +18,6 @@ const defaultChecklist: Omit<ChecklistItem, "id">[] = [
   { category: "PRÉ-CAMPO", text: "Verificar prazo de calibração do nível", checked: false },
   { category: "PRÉ-CAMPO", text: "Definir datum e sistema de coordenadas (SIRGAS 2000)", checked: false },
   { category: "PRÉ-CAMPO", text: "Planejar poligonal principal e pontos de apoio", checked: false },
-  // Campo
   { category: "EM CAMPO", text: "Implantar marcos geodésicos nos vértices da poligonal", checked: false },
   { category: "EM CAMPO", text: "Realizar fechamento angular da poligonal", checked: false },
   { category: "EM CAMPO", text: "Verificar erro de fechamento (tolerância < 1'√n)", checked: false },
@@ -29,7 +27,6 @@ const defaultChecklist: Omit<ChecklistItem, "id">[] = [
   { category: "EM CAMPO", text: "Registrar pontos cotados em densidade adequada", checked: false },
   { category: "EM CAMPO", text: "Fotografar marcos e situações relevantes", checked: false },
   { category: "EM CAMPO", text: "Anotar obstruções e detalhes do terreno no croqui", checked: false },
-  // Escritório
   { category: "PÓS-CAMPO", text: "Importar dados do coletor para o software", checked: false },
   { category: "PÓS-CAMPO", text: "Calcular e compensar a poligonal (Bowditch/Transit)", checked: false },
   { category: "PÓS-CAMPO", text: "Verificar erro linear de fechamento (1:5000 mín.)", checked: false },
@@ -52,54 +49,89 @@ export default function Checklist() {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [newItemText, setNewItemText] = useState("");
   const [newItemCategory, setNewItemCategory] = useState("EM CAMPO");
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  useEffect(() => {
-    const saved = localStorage.getItem("topo-checklist");
-    if (saved) {
-      setItems(JSON.parse(saved));
-    } else {
-      const initial = defaultChecklist.map((item) => ({ ...item, id: crypto.randomUUID() }));
-      setItems(initial);
-      localStorage.setItem("topo-checklist", JSON.stringify(initial));
+  const fetchItems = useCallback(async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("checklist_items")
+      .select("id, text, checked, category")
+      .order("created_at", { ascending: true });
+
+    if (error) {
+      toast({ title: "Erro ao carregar checklist", variant: "destructive" });
+      setLoading(false);
+      return;
     }
-  }, []);
 
-  const save = (next: ChecklistItem[]) => {
-    setItems(next);
-    localStorage.setItem("topo-checklist", JSON.stringify(next));
+    if (data && data.length === 0) {
+      // First time: seed defaults
+      const { data: user } = await supabase.auth.getUser();
+      const uid = user.user?.id ?? "";
+      const { data: inserted, error: insertError } = await supabase
+        .from("checklist_items")
+        .insert(defaultChecklist.map((item) => ({ ...item, user_id: uid })))
+        .select("id, text, checked, category");
+      if (!insertError && inserted) setItems(inserted as ChecklistItem[]);
+    } else if (data) {
+      setItems(data as ChecklistItem[]);
+    }
+    setLoading(false);
+  }, [toast]);
+
+  useEffect(() => { fetchItems(); }, [fetchItems]);
+
+  const toggle = async (id: string) => {
+    const item = items.find((i) => i.id === id);
+    if (!item) return;
+    const newChecked = !item.checked;
+    setItems((prev) => prev.map((i) => i.id === id ? { ...i, checked: newChecked } : i));
+    await supabase.from("checklist_items").update({ checked: newChecked }).eq("id", id);
   };
 
-  const toggle = (id: string) => {
-    save(items.map((it) => (it.id === id ? { ...it, checked: !it.checked } : it)));
+  const remove = async (id: string) => {
+    setItems((prev) => prev.filter((i) => i.id !== id));
+    await supabase.from("checklist_items").delete().eq("id", id);
   };
 
-  const remove = (id: string) => {
-    save(items.filter((it) => it.id !== id));
-  };
-
-  const addItem = () => {
+  const addItem = async () => {
     if (!newItemText.trim()) return;
-    const newItem: ChecklistItem = {
-      id: crypto.randomUUID(),
-      text: newItemText.trim(),
-      category: newItemCategory,
-      checked: false,
-    };
-    save([...items, newItem]);
-    setNewItemText("");
-    toast({ title: "Item adicionado", description: newItem.text });
+    const { data: userData } = await supabase.auth.getUser();
+    const uid = userData.user?.id ?? "";
+    const payload = { text: newItemText.trim(), category: newItemCategory, checked: false, user_id: uid };
+    const { data, error } = await supabase.from("checklist_items").insert(payload).select("id, text, checked, category").single();
+    if (!error && data) {
+      setItems((prev) => [...prev, data as ChecklistItem]);
+      setNewItemText("");
+      toast({ title: "Item adicionado", description: data.text });
+    }
   };
 
-  const reset = () => {
-    const initial = defaultChecklist.map((item) => ({ ...item, id: crypto.randomUUID() }));
-    save(initial);
+  const reset = async () => {
+    const { data: userData } = await supabase.auth.getUser();
+    const uid = userData.user?.id ?? "";
+    await supabase.from("checklist_items").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+    const { data: inserted } = await supabase
+      .from("checklist_items")
+      .insert(defaultChecklist.map((item) => ({ ...item, user_id: uid })))
+      .select("id, text, checked, category");
+    if (inserted) setItems(inserted as ChecklistItem[]);
     toast({ title: "Checklist resetado", description: "Todos os itens foram restaurados." });
   };
+
 
   const categories = [...new Set(items.map((it) => it.category))];
   const totalChecked = items.filter((it) => it.checked).length;
   const progress = items.length > 0 ? Math.round((totalChecked / items.length) * 100) : 0;
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[40vh]">
+        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in max-w-3xl mx-auto">
@@ -196,7 +228,7 @@ export default function Checklist() {
               {isOpen && (
                 <div className="border-t border-border divide-y divide-border/50">
                   {catItems.map((item) => (
-                    <div key={item.id} className={`flex items-start gap-3 px-5 py-3 transition-colors ${item.checked ? "bg-success/5" : "hover:bg-white/3"}`}>
+                    <div key={item.id} className={`group flex items-start gap-3 px-5 py-3 transition-colors ${item.checked ? "bg-success/5" : "hover:bg-white/3"}`}>
                       <button onClick={() => toggle(item.id)} className="mt-0.5 flex-shrink-0">
                         {item.checked
                           ? <CheckSquare className="w-4.5 h-4.5 text-success" />

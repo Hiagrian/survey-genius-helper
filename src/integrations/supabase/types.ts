@@ -14,7 +14,75 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      analysis_history: {
+        Row: {
+          conclusion: string | null
+          corrections: Json | null
+          created_at: string
+          id: string
+          reasons: Json | null
+          status: string
+          tips: Json | null
+          title: string | null
+          topic: string | null
+          user_id: string
+        }
+        Insert: {
+          conclusion?: string | null
+          corrections?: Json | null
+          created_at?: string
+          id?: string
+          reasons?: Json | null
+          status: string
+          tips?: Json | null
+          title?: string | null
+          topic?: string | null
+          user_id: string
+        }
+        Update: {
+          conclusion?: string | null
+          corrections?: Json | null
+          created_at?: string
+          id?: string
+          reasons?: Json | null
+          status?: string
+          tips?: Json | null
+          title?: string | null
+          topic?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      checklist_items: {
+        Row: {
+          category: string
+          checked: boolean
+          created_at: string
+          id: string
+          text: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          checked?: boolean
+          created_at?: string
+          id?: string
+          text: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          checked?: boolean
+          created_at?: string
+          id?: string
+          text?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
