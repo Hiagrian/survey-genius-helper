@@ -11,6 +11,7 @@ import Checklist from "./pages/Checklist";
 import ImageAnalyzer from "./pages/ImageAnalyzer";
 import KnowledgeBase from "./pages/KnowledgeBase";
 import AnalysisHistory from "./pages/AnalysisHistory";
+import GeoHub from "./pages/GeoHub";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -37,6 +38,7 @@ function ProtectedRoutes() {
         <Route path="/analisador" element={<ImageAnalyzer />} />
         <Route path="/historico" element={<AnalysisHistory />} />
         <Route path="/conhecimento" element={<KnowledgeBase />} />
+        <Route path="/geohub" element={<GeoHub />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       <TopoChatWidget />

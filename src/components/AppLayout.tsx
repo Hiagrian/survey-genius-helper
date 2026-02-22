@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { Map, CheckSquare, Camera, BookOpen, Menu, X, Triangle, History, LogOut, User } from "lucide-react";
+import { Map, CheckSquare, Camera, BookOpen, Menu, X, Triangle, History, LogOut, User, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import { AppFooter } from "./AppFooter";
 
 const navItems = [
   { to: "/", icon: Map, label: "Dashboard" },
@@ -10,6 +11,7 @@ const navItems = [
   { to: "/analisador", icon: Camera, label: "Analisador IA" },
   { to: "/historico", icon: History, label: "Histórico" },
   { to: "/conhecimento", icon: BookOpen, label: "Base de Dados" },
+  { to: "/geohub", icon: Globe, label: "GeoHub" },
 ];
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
@@ -60,6 +62,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         </header>
 
         <main className="flex-1 p-4 lg:p-8">{children}</main>
+        <AppFooter />
       </div>
     </div>
   );
