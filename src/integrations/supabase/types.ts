@@ -57,6 +57,7 @@ export type Database = {
         Row: {
           category: string
           checked: boolean
+          checklist_id: string | null
           created_at: string
           id: string
           text: string
@@ -66,6 +67,7 @@ export type Database = {
         Insert: {
           category: string
           checked?: boolean
+          checklist_id?: string | null
           created_at?: string
           id?: string
           text: string
@@ -75,10 +77,40 @@ export type Database = {
         Update: {
           category?: string
           checked?: boolean
+          checklist_id?: string | null
           created_at?: string
           id?: string
           text?: string
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checklist_items_checklist_id_fkey"
+            columns: ["checklist_id"]
+            isOneToOne: false
+            referencedRelation: "custom_checklists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      custom_checklists: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
           user_id?: string
         }
         Relationships: []
