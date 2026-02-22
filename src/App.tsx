@@ -39,6 +39,7 @@ function ProtectedRoutes() {
         <Route path="/conhecimento" element={<KnowledgeBase />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
+      <TopoChatWidget />
     </AppLayout>
   );
 }
@@ -61,7 +62,6 @@ const App = () => (
             <Route path="/auth" element={<AuthRoute />} />
             <Route path="/*" element={<ProtectedRoutes />} />
           </Routes>
-          <TopoChatWidget />
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
