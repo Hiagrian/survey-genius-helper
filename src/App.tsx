@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AppLayout } from "./components/AppLayout";
+import { TopoChatWidget } from "./components/TopoChatWidget";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import Dashboard from "./pages/Dashboard";
 import Checklist from "./pages/Checklist";
@@ -60,6 +61,7 @@ const App = () => (
             <Route path="/auth" element={<AuthRoute />} />
             <Route path="/*" element={<ProtectedRoutes />} />
           </Routes>
+          <TopoChatWidget />
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
